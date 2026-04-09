@@ -1,37 +1,38 @@
 from playwright.sync_api import sync_playwright
 
-def get_news():
+def scrape_amazon():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=200)
+        browser = p.chromium.launch(headless=True)  # set False if you want to see browser
         page = browser.new_page()
 
         try:
-            # Open Bing News directly
-            page.goto("https://www.bing.com/news/search?q=SA+vs+AUS+update", timeout=60000)
+            # Open Amazon India
+            page.goto("https://www.amazon.in", timeout=60000)
 
-            # Wait for news titles
-            page.wait_for_selector("a.title", timeout=20000)
+            # Wait for page to load
+            page.wait_for_load_state("domcontentloaded")
 
-            print("\n🔍 Latest SA vs AUS News:\n")
+            # Optional: wait for main content
+            page.wait_for_selector("body", timeout=15000)
 
-            results = page.locator("a.title")
-            count = results.count()
+            # Get full visible text content
+            content = page.inner_text("body")
 
-            for i in range(min(count, 10)):
-                title = results.nth(i).inner_text()
-                link = results.nth(i).get_attribute("href")
+            # Save to file
+            with open("amazon_content.txt", "w", encoding="utf-8") as f:
+                f.write(content)
 
-                print(f"{i+1}. {title}")
-                print(f"   {link}\n")
+            print("✅ Content saved to amazon_content.txt")
 
         except Exception as e:
-            print("❌ Error occurred:", e)
-            page.screenshot(path="error_debug.png")
-            print("📸 Screenshot saved as error_debug.png")
+            print("❌ Error:", e)
+            page.screenshot(path="amazon_error.png")
+            print("📸 Screenshot saved as amazon_error.png")
 
         finally:
             browser.close()
 
 
 if __name__ == "__main__":
-    get_news()
+    scrape_amazon()
+    
